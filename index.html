@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>brain rot slots</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: 'Roboto', sans-serif;
+            background-color: #f0f0f0;
+        }
+        .container {
+            text-align: center;
+        }
+        .slot {
+            width: 100px;
+            height: 100px;
+            border: 1px solid #000;
+            display: inline-block;
+            margin: 10px;
+            background-size: cover;
+            animation: spin 0.5s ease-in-out;
+        }
+        #rollButton, #resetButton {
+            display: block;
+            margin: 20px auto;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        #coins, #message {
+            font-size: 18px;
+            margin-top: 20px;
+        }
+        #message {
+            color: green;
+        }
+        @keyframes spin {
+            0% { transform: rotateX(0deg); }
+            100% { transform: rotateX(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="slot" id="slot1"></div>
+        <div class="slot" id="slot2"></div>
+        <div class="slot" id="slot3"></div>
+        <button id="rollButton">Roll</button>
+        <button id="resetButton">Reset</button>
+        <div id="coins">Coins: <span id="coinCount">10</span></div>
+        <div id="message"></div>
+        <audio id="winSound" src="win.mp3"></audio>
+        <div>
+            <label for="betAmount">Bet Amount:</label>
+            <input type="number" id="betAmount" value="1" min="1" max="10">
+        </div>
+    </div>
+
+    <script>
+        const images = ['7.png', 'mango.jpg', 'cherry.webp', 'bar.png', 'bell.png', 'grapes.png', 'orange.png', 'plum.png', 'watermelon.png'];
+        const initialCoins = 100;
+
+        // Load coins from localStorage or set to initialCoins
+        let coins = localStorage.getItem('coins') ? parseInt(localStorage.getItem('coins')) : initialCoins;
+        document.getElementById('coinCount').innerText = coins;
+
+        document.getElementById('rollButton').addEventListener('click', () => {
+            const betAmount = parseInt(document.getElementById('betAmount').value);
+            if (coins >= betAmount) {
+                coins -= betAmount;
+                localStorage.setItem('coins', coins);
+                document.getElementById('coinCount').innerText = coins;
+
+                let slots = [];
+                for (let i = 1; i <= 3; i++) {
+                    const slot = document.getElementById(`slot${i}`);
+                    slot.style.animation = 'none'; // Reset animation
+                    const randomImage = images[Math.floor(Math.random() * images.length)];
+                    slots.push(randomImage);
+                    setTimeout(() => {
+                        slot.style.backgroundImage = `url(${randomImage})`;
+                        slot.style.animation = 'spin 0.5s ease-in-out';
+                    }, 50); // Small delay to reset animation
+                }
+
+                // Check for matches
+                const matchCount = slots.reduce((acc, curr, idx, arr) => arr.indexOf(curr) !== idx ? acc + 1 : acc, 0);
+                const messageElement = document.getElementById('message');
+                messageElement.innerText = '';
+
+                if (matchCount === 1) {
+                    coins += betAmount * 3; // Earn 2 times the bet amount if two slots match
+                    messageElement.innerText = `You won ${betAmount * 3} coins!`;
+                } else if (matchCount === 3) {
+                    coins += betAmount * 10; // Earn 5 times the bet amount if all three slots match
+                    messageElement.innerText = `You won ${betAmount * 5} coins!`;
+                    document.getElementById('winSound').play();
+                }
+
+                localStorage.setItem('coins', coins);
+                document.getElementById('coinCount').innerText = coins;
+            } else {
+                alert('You do not have enough coins to place this bet!');
+            }
+        });
+
+        document.getElementById('resetButton').addEventListener('click', () => {
+            if (confirm('Are you sure you want to reset?')) {
+                coins = initialCoins;
+                localStorage.setItem('coins', coins);
+                document.getElementById('coinCount').innerText = coins;
+                document.getElementById('message').innerText = '';
+            }
+        });
+    </script>
+</body>
+</html>
