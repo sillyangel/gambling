@@ -175,22 +175,21 @@
                 }
 
                 // Check for matches
-                const matchCount = slots.reduce((acc, curr, idx, arr) => arr.indexOf(curr) !== idx ? acc + 1 : acc, 0);
                 const messageElement = document.getElementById('message');
                 const lossMessageElement = document.getElementById('lossMessage');
                 messageElement.innerText = '';
                 lossMessageElement.innerText = '';
 
                 let result;
-                if (matchCount === 1) {
-                    coins += betAmount * 3; // Earn 2 times the bet amount if two slots match
-                    messageElement.innerText = `You won ${betAmount * 3} coins!`;
-                    result = `Won ${betAmount * 2} coins`;
-                } else if (matchCount === 3) {
-                    coins += betAmount * 6; // Earn 5 times the bet amount if all three slots match
-                    messageElement.innerText = `You won ${betAmount * 6} coins!`;
+                if (slots[0] === slots[1] && slots[1] === slots[2]) {
+                    coins += betAmount * 5; // Earn 5 times the bet amount if all three slots match
+                    messageElement.innerText = `You won ${betAmount * 5} coins!`;
                     document.getElementById('winSound').play();
                     result = `Won ${betAmount * 5} coins`;
+                } else if (slots[0] === slots[1] || slots[1] === slots[2] || slots[0] === slots[2]) {
+                    coins += betAmount * 2; // Earn 2 times the bet amount if two slots match
+                    messageElement.innerText = `You won ${betAmount * 2} coins!`;
+                    result = `Won ${betAmount * 2} coins`;
                 } else {
                     lossMessageElement.innerText = `You lost ${betAmount} coins!`;
                     result = `Lost ${betAmount} coins`;
