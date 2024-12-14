@@ -1,0 +1,41 @@
+{
+  "name": "Brain Rot Slots",
+  "short_name": "Slots",
+  "description": "A simple web-based slot machine game.",
+  "start_url": "index.html",
+  "display_override": ["fullscreen", "minimal-ui"],
+  "display": "standalone",
+  "background_color": "#323232",
+  "theme_color": "#323232",
+  "icons": [
+    {
+        "src": "icons/icon-192x192.png",
+        "sizes": "192x192",
+        "type": "image/png"
+    },
+    {
+        "src": "icons/icon-512x512.png",
+        "sizes": "512x512",
+        "type": "image/png"
+    },
+    {
+        "src": "icons/icon-192x192.png",
+        "sizes": "192x192",
+        "type": "image/png",
+        "purpose": "maskable"
+    },
+    {
+        "src": "icons/icon-512x512.png",
+        "sizes": "512x512",
+        "type": "image/png",
+        "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "./screenshot.png",
+      "sizes": "352x368",
+      "type": "image/png"
+    }
+  ]
+}
