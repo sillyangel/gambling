@@ -13,7 +13,8 @@
             height: 100vh;
             margin: 0;
             font-family: 'Roboto', sans-serif;
-            background-color: #f0f0f0;
+            background-color: #323232;
+            color: white;
         }
         .container {
             text-align: center;
@@ -21,29 +22,72 @@
         .slot {
             width: 100px;
             height: 100px;
-            border: 1px solid #000;
+            border: 1px solid #ffffff;
             display: inline-block;
             margin: 10px;
             background-size: cover;
             animation: spin 0.5s ease-in-out;
         }
-        #rollButton, #resetButton {
-            display: block;
-            margin: 20px auto;
-            padding: 10px 20px;
-            font-size: 16px;
+        #rollButton {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 15px 35px;
+            border-radius: 0.25em;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 19px;
+            margin: 4px 2px;
             cursor: pointer;
         }
-        #coins, #message {
+        #resetButton {
+            margin: 20px auto;
+            background-color: #cf3939;
+            color: white;
+            border: none;
+            padding: 15px 35px;
+            border-radius: 0.25em;
+            text-align: center;
+            text-decoration: none;
+            display: block;
+            font-size: 19px;
+            cursor: pointer;
+        }
+        #coins, #message, #lossMessage {
             font-size: 18px;
             margin-top: 20px;
         }
         #message {
             color: green;
         }
+        #lossMessage {
+            color: red;
+        }
         @keyframes spin {
             0% { transform: rotateX(0deg); }
             100% { transform: rotateX(360deg); }
+        }
+        #transcript {
+            max-height: 50em;
+            overflow-y: auto;
+        }
+        .pagination {
+            margin-top: 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: center;
+        }
+        th, td {
+            background-color: #f2f2f2;
+            color: black;
         }
     </style>
 </head>
@@ -56,20 +100,60 @@
         <button id="resetButton">Reset</button>
         <div id="coins">Coins: <span id="coinCount">10</span></div>
         <div id="message"></div>
+        <div id="lossMessage"></div>
         <audio id="winSound" src="win.mp3"></audio>
         <div>
             <label for="betAmount">Bet Amount:</label>
             <input type="number" id="betAmount" value="1" min="1" max="10">
         </div>
+        <hr>
+        <div>
+            <div class="pagination">
+                <button id="prevPage">Previous</button>
+                <button id="nextPage">Next</button>
+            </div>
+            <div id="transcript">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Win/Lost</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transcriptBody"></tbody>
+                </table>
+            </div>  
+        </div>
     </div>
-
+    <br><br><br><br><br>
     <script>
-        const images = ['7.png', 'mango.jpg', 'cherry.webp', 'bar.png', 'bell.png', 'grapes.png', 'orange.png', 'plum.png', 'watermelon.png'];
+        const images = ['7.png', 'mango.jpg', 'cherry.webp', 'gyat.png', 'bell.webp', 'sks.webp', 'cat.jpg'];
         const initialCoins = 100;
+        let currentPage = 1;
+        const resultsPerPage = 10;
 
         // Load coins from localStorage or set to initialCoins
         let coins = localStorage.getItem('coins') ? parseInt(localStorage.getItem('coins')) : initialCoins;
         document.getElementById('coinCount').innerText = coins;
+
+        // Open IndexedDB
+        let db;
+        const request = indexedDB.open('slotMachineDB', 1);
+
+        request.onupgradeneeded = (event) => {
+            db = event.target.result;
+            const objectStore = db.createObjectStore('results', { keyPath: 'id', autoIncrement: true });
+            objectStore.createIndex('result', 'result', { unique: false });
+        };
+
+        request.onsuccess = (event) => {
+            db = event.target.result;
+            loadResults();
+        };
+
+        request.onerror = (event) => {
+            console.error('Database error:', event.target.errorCode);
+        };
 
         document.getElementById('rollButton').addEventListener('click', () => {
             const betAmount = parseInt(document.getElementById('betAmount').value);
@@ -93,19 +177,36 @@
                 // Check for matches
                 const matchCount = slots.reduce((acc, curr, idx, arr) => arr.indexOf(curr) !== idx ? acc + 1 : acc, 0);
                 const messageElement = document.getElementById('message');
+                const lossMessageElement = document.getElementById('lossMessage');
                 messageElement.innerText = '';
+                lossMessageElement.innerText = '';
 
+                let result;
                 if (matchCount === 1) {
                     coins += betAmount * 3; // Earn 2 times the bet amount if two slots match
                     messageElement.innerText = `You won ${betAmount * 3} coins!`;
+                    result = `Won ${betAmount * 2} coins`;
                 } else if (matchCount === 3) {
-                    coins += betAmount * 10; // Earn 5 times the bet amount if all three slots match
-                    messageElement.innerText = `You won ${betAmount * 5} coins!`;
+                    coins += betAmount * 6; // Earn 5 times the bet amount if all three slots match
+                    messageElement.innerText = `You won ${betAmount * 6} coins!`;
                     document.getElementById('winSound').play();
+                    result = `Won ${betAmount * 5} coins`;
+                } else {
+                    lossMessageElement.innerText = `You lost ${betAmount} coins!`;
+                    result = `Lost ${betAmount} coins`;
                 }
 
                 localStorage.setItem('coins', coins);
                 document.getElementById('coinCount').innerText = coins;
+
+                // Save result to IndexedDB
+                const transaction = db.transaction(['results'], 'readwrite');
+                const objectStore = transaction.objectStore('results');
+                objectStore.add({ result: result, timestamp: new Date() });
+
+                transaction.oncomplete = () => {
+                    loadResults();
+                };
             } else {
                 alert('You do not have enough coins to place this bet!');
             }
@@ -117,8 +218,53 @@
                 localStorage.setItem('coins', coins);
                 document.getElementById('coinCount').innerText = coins;
                 document.getElementById('message').innerText = '';
+                document.getElementById('lossMessage').innerText = '';
             }
         });
+
+        document.getElementById('prevPage').addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                loadResults();
+            }
+        });
+
+        document.getElementById('nextPage').addEventListener('click', () => {
+            currentPage++;
+            loadResults();
+        });
+
+        function loadResults() {
+            const transaction = db.transaction(['results'], 'readonly');
+            const objectStore = transaction.objectStore('results');
+            const request = objectStore.getAll();
+
+            request.onsuccess = (event) => {
+                const results = event.target.result.sort((a, b) => b.timestamp - a.timestamp);
+                const start = (currentPage - 1) * resultsPerPage;
+                const end = start + resultsPerPage;
+                const paginatedResults = results.slice(start, end);
+
+                const transcriptBody = document.getElementById('transcriptBody');
+                transcriptBody.innerHTML = '';
+
+                paginatedResults.forEach((result) => {
+                    const row = document.createElement('tr');
+                    const timeCell = document.createElement('td');
+                    const resultCell = document.createElement('td');
+
+                    timeCell.textContent = new Date(result.timestamp).toLocaleString();
+                    resultCell.textContent = result.result;
+
+                    row.appendChild(timeCell);
+                    row.appendChild(resultCell);
+                    transcriptBody.appendChild(row);
+                });
+
+                document.getElementById('prevPage').disabled = currentPage === 1;
+                document.getElementById('nextPage').disabled = end >= results.length;
+            };
+        }
     </script>
 </body>
 </html>
