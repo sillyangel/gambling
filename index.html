@@ -213,6 +213,18 @@
                 alert('You do not have enough coins to place this bet!');
             }
         });
+        document.getElementById('slot2').addEventListener('click', () => {
+    coins += 200; // Add 200 coins to the total
+    localStorage.setItem('coins', coins); // Save the updated coins in localStorage
+    document.getElementById('coinCount').innerText = coins; // Update the displayed coin count
+
+    // Optional: Display a success message
+    const messageElement = document.getElementById('message');
+    messageElement.innerText = 'You received 200 bonus coins!';
+    setTimeout(() => {
+        messageElement.innerText = ''; // Clear the message after 2 seconds
+    }, 2000);
+});
 
         document.getElementById('resetButton').addEventListener('click', () => {
             if (confirm('Are you sure you want to reset?')) {
