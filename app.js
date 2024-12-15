@@ -108,7 +108,7 @@ document.getElementById('rollButton').addEventListener('click', () => {
                     };
                     // Enable roll button
                     document.getElementById('rollButton').disabled = false;
-                }, slotCount * 1000 + 2000); // Wait for all slots to show their results
+                }, slotCount * 500 + 500); // Wait for all slots to show their results
             }, 2000);
         });
     } else {
