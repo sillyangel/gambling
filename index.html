@@ -18,6 +18,7 @@
             font-family: 'Roboto', sans-serif;
             background-color: #323232;
             color: white;
+            user-select: none; /* Make all text non-selectable */
         }
         .container {
             text-align: center;
@@ -31,7 +32,7 @@
             background-size: cover;
             animation: spin 0.5s ease-in-out;
         }
-        #rollButton {
+        #rollButton, #resetButton, #prevPage, #nextPage {
             background-color: #4CAF50;
             color: white;
             border: none;
@@ -43,19 +44,12 @@
             font-size: 19px;
             margin: 4px 2px;
             cursor: pointer;
+            user-select: none; /* Make buttons non-selectable */
         }
         #resetButton {
-            margin: 20px auto;
             background-color: #cf3939;
-            color: white;
-            border: none;
-            padding: 15px 35px;
-            border-radius: 0.25em;
-            text-align: center;
-            text-decoration: none;
             display: block;
-            font-size: 19px;
-            cursor: pointer;
+            margin: 20px auto;
         }
         #coins, #message, #lossMessage {
             font-size: 18px;
@@ -68,6 +62,10 @@
             color: red;
         }
         @keyframes spin {
+            0% { transform: rotateX(0deg); }
+            100% { transform: rotateX(360deg); }
+        }
+        @keyframes continuousSpin {
             0% { transform: rotateX(0deg); }
             100% { transform: rotateX(360deg); }
         }
@@ -129,6 +127,7 @@
         </div>
     </div>
     <br><br><br><br><br>
+    <audio id="rollSound" src="roll_fast.mp3"></audio>
     <script>
         const images = ['7.png', 'mango.jpg', 'cherry.webp', 'gyat.png', 'bell.webp', 'sks.webp', 'cat.jpg', 'chillguy.webp'];
         const initialCoins = 100;
@@ -158,6 +157,20 @@
             console.error('Database error:', event.target.errorCode);
         };
 
+        function startSlotAnimations() {
+            for (let i = 1; i <= 3; i++) {
+                const slot = document.getElementById(`slot${i}`);
+                slot.style.animation = 'continuousSpin 1s linear infinite';
+            }
+        }
+
+        function stopSlotAnimations() {
+            for (let i = 1; i <= 3; i++) {
+                const slot = document.getElementById(`slot${i}`);
+                slot.style.animation = 'none';
+            }
+        }
+
         document.getElementById('rollButton').addEventListener('click', () => {
             const betAmount = parseInt(document.getElementById('betAmount').value);
             if (coins >= betAmount) {
@@ -165,66 +178,88 @@
                 localStorage.setItem('coins', coins);
                 document.getElementById('coinCount').innerText = coins;
 
-                let slots = [];
-                for (let i = 1; i <= 3; i++) {
-                    const slot = document.getElementById(`slot${i}`);
-                    slot.style.animation = 'none'; // Reset animation
-                    const randomImage = images[Math.floor(Math.random() * images.length)];
-                    slots.push(randomImage);
+                // Disable roll button
+                document.getElementById('rollButton').disabled = true;
+
+                // Play roll sound
+                const rollSound = document.getElementById('rollSound');
+                rollSound.play();
+
+                // Start slot animations
+                startSlotAnimations();
+
+                rollSound.addEventListener('ended', () => {
+                    // Stop slot animations 2 seconds after the roll sound ends
                     setTimeout(() => {
-                        slot.style.backgroundImage = `url(${randomImage})`;
-                        slot.style.animation = 'spin 0.5s ease-in-out';
-                    }, 50); // Small delay to reset animation
-                }
+                        stopSlotAnimations();
 
-                // Check for matches
-                const messageElement = document.getElementById('message');
-                const lossMessageElement = document.getElementById('lossMessage');
-                messageElement.innerText = '';
-                lossMessageElement.innerText = '';
+                        let slots = [];
+                        for (let i = 1; i <= 3; i++) {
+                            const slot = document.getElementById(`slot${i}`);
+                            const randomImage = images[Math.floor(Math.random() * images.length)];
+                            slots.push(randomImage);
+                            setTimeout(() => {
+                                slot.style.backgroundImage = `url(${randomImage})`;
+                                slot.style.animation = 'spin 0.5s ease-in-out';
+                            }, i * 1000); // Show each slot result 1 second apart
+                        }
 
-                let result;
-                if (slots[0] === slots[1] && slots[1] === slots[2]) {
-                    coins += betAmount * 5; // Earn 5 times the bet amount if all three slots match
-                    messageElement.innerText = `You won ${betAmount * 5} coins!`;
-                    document.getElementById('winSound').play();
-                    result = `Won ${betAmount * 5} coins`;
-                } else if (slots[0] === slots[1] || slots[1] === slots[2] || slots[0] === slots[2]) {
-                    coins += betAmount * 2; // Earn 2 times the bet amount if two slots match
-                    messageElement.innerText = `You won ${betAmount * 2} coins!`;
-                    result = `Won ${betAmount * 2} coins`;
-                } else {
-                    lossMessageElement.innerText = `You lost ${betAmount} coins!`;
-                    result = `Lost ${betAmount} coins`;
-                }
+                        setTimeout(() => {
+                            // Check for matches
+                            const messageElement = document.getElementById('message');
+                            const lossMessageElement = document.getElementById('lossMessage');
+                            messageElement.innerText = '';
+                            lossMessageElement.innerText = '';
 
-                localStorage.setItem('coins', coins);
-                document.getElementById('coinCount').innerText = coins;
+                            let result;
+                            if (slots[0] === slots[1] && slots[1] === slots[2]) {
+                                coins += betAmount * 10; // Earn 10 times the bet amount if all three slots match
+                                messageElement.innerText = `You won ${betAmount * 10} coins!`;
+                                document.getElementById('winSound').play();
+                                result = `Won ${betAmount * 10} coins`;
+                            } else if (slots[0] === slots[1] || slots[1] === slots[2] || slots[0] === slots[2]) {
+                                coins += betAmount * 2; // Earn 2 times the bet amount if two slots match
+                                messageElement.innerText = `You won ${betAmount * 2} coins!`;
+                                result = `Won ${betAmount * 2} coins`;
+                            } else {
+                                lossMessageElement.innerText = `You lost ${betAmount} coins!`;
+                                result = `Lost ${betAmount} coins`;
+                            }
 
-                // Save result to IndexedDB
-                const transaction = db.transaction(['results'], 'readwrite');
-                const objectStore = transaction.objectStore('results');
-                objectStore.add({ result: result, timestamp: new Date() });
+                            localStorage.setItem('coins', coins);
+                            document.getElementById('coinCount').innerText = coins;
 
-                transaction.oncomplete = () => {
-                    loadResults();
-                };
+                            // Save result to IndexedDB
+                            const transaction = db.transaction(['results'], 'readwrite');
+                            const objectStore = transaction.objectStore('results');
+                            objectStore.add({ result: result, timestamp: new Date() });
+
+                            transaction.oncomplete = () => {
+                                loadResults();
+                            };
+
+                            // Enable roll button
+                            document.getElementById('rollButton').disabled = false;
+                        }, 4000); // Wait for all slots to show their results
+                    }, 1);
+                });
             } else {
                 alert('You do not have enough coins to place this bet!');
             }
         });
-        document.getElementById('slot2').addEventListener('click', () => {
-    coins += 200; // Add 200 coins to the total
-    localStorage.setItem('coins', coins); // Save the updated coins in localStorage
-    document.getElementById('coinCount').innerText = coins; // Update the displayed coin count
 
-    // Optional: Display a success message
-    const messageElement = document.getElementById('message');
-    messageElement.innerText = 'You received 200 bonus coins!';
-    setTimeout(() => {
-        messageElement.innerText = ''; // Clear the message after 2 seconds
-    }, 2000);
-});
+        document.getElementById('slot2').addEventListener('click', () => {
+            coins += 200; // Add 200 coins to the total
+            localStorage.setItem('coins', coins); // Save the updated coins in localStorage
+            document.getElementById('coinCount').innerText = coins; // Update the displayed coin count
+
+            // Optional: Display a success message
+            const messageElement = document.getElementById('message');
+            messageElement.innerText = 'You received 200 bonus coins!';
+            setTimeout(() => {
+                messageElement.innerText = ''; // Clear the message after 2 seconds
+            }, 2000);
+        });
 
         document.getElementById('resetButton').addEventListener('click', () => {
             if (confirm('Are you sure you want to reset?')) {
