@@ -1,0 +1,81 @@
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    font-family: 'Roboto', sans-serif;
+    background-color: #323232;
+    color: white;
+    user-select: none; /* Make all text non-selectable */
+}
+.container {
+    text-align: center;
+}
+.slot {
+    width: 100px;
+    height: 100px;
+    border: 1px solid #ffffff;
+    display: inline-block;
+    margin: 10px;
+    background-size: cover;
+    animation: spin 0.5s ease-in-out;
+}
+#rollButton, #resetButton, #prevPage, #nextPage {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 15px 35px;
+    border-radius: 0.25em;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 19px;
+    margin: 4px 2px;
+    cursor: pointer;
+    user-select: none; /* Make buttons non-selectable */
+}
+#resetButton {
+    background-color: #cf3939;
+    display: block;
+    margin: 20px auto;
+}
+#coins, #message, #lossMessage {
+    font-size: 18px;
+    margin-top: 20px;
+}
+#message {
+    color: green;
+}
+#lossMessage {
+    color: red;
+}
+@keyframes spin {
+    0% { transform: rotateX(0deg); }
+    100% { transform: rotateX(360deg); }
+}
+@keyframes continuousSpin {
+    0% { transform: rotateX(0deg); }
+    100% { transform: rotateX(360deg); }
+}
+#transcript {
+    max-height: 50em;
+    overflow-y: auto;
+}
+.pagination {
+    margin-top: 10px;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+th, td {
+    border: 1px solid #000;
+    padding: 8px;
+    text-align: center;
+}
+th, td {
+    background-color: #f2f2f2;
+    color: black;
+}
